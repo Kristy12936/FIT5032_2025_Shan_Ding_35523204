@@ -1,0 +1,22 @@
+[
+  {
+    "title": "Healthy Eating Tips",
+    "type": "Nutrition",
+    "description": "Maintain a balanced diet rich in fruits, vegetables, and whole grains. Avoid excessive salt and sugar intake."
+  },
+  {
+    "title": "Mental Wellness Hotline",
+    "type": "Mental Health",
+    "description": "Call 1800 123 456 for free and confidential mental health support available 24/7."
+  },
+  {
+    "title": "Physical Activity Guide",
+    "type": "Exercise",
+    "description": "Engage in moderate physical activity at least 30 minutes a day. Walking and Tai Chi are highly recommended."
+  },
+  {
+    "title": "Elder Care Support",
+    "type": "Social Support",
+    "description": "Visit local community centers or call 1800 CARE AGE to learn more about elder care services."
+  }
+]

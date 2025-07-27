@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "title": "Senior Fitness Workshop",
+    "date": "2025-07-30",
+    "description": "A community event for senior fitness.",
+    "participants": [],
+    "ratings": []
+  },
+  {
+    "id": 2,
+    "title": "Healthy Nutrition Talk",
+    "date": "2025-08-05",
+    "description": "Learn about senior nutrition tips.",
+    "participants": [],
+    "ratings": []
+  },
+  {
+    "id": 3,
+    "title": "Mental Wellness Seminar",
+    "date": "2025-08-10",
+    "description": "Discuss mental health strategies for seniors.",
+    "participants": [],
+    "ratings": []
+  }
+]

@@ -1,123 +1,137 @@
-// src/views/Dashboard.vue
 <template>
-  <div class="dashboard container">
-    <h1 class="mb-4">User Dashboard</h1>
-    <div class="mb-4">
-      <p><strong>Total Events:</strong> {{ stats.totalEvents }}</p>
-      <p><strong>Joined Events:</strong> {{ stats.joinedEvents }}</p>
-      <p><strong>Average Rating:</strong> {{ stats.avgRating }}</p>
-    </div>
-    <div class="row">
-      <div class="col-md-6">
-        <canvas id="monthlyChart" style="height: 300px;"></canvas>
+  <div class="dashboard-wrapper py-5">
+    <div class="container" data-aos="fade-up">
+      <!-- 用户信息卡 -->
+      <div class="card p-4 shadow-sm border-0 mb-5">
+        <h2 class="mb-3 text-primary"><i class="fas fa-user-circle me-2"></i>My Dashboard</h2>
+        <p><strong>Name:</strong> {{ user.name }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p>
+          <strong>Role:</strong>
+          <span class="badge" :class="user.role === 'admin' ? 'bg-danger' : 'bg-secondary'">
+            {{ user.role }}
+          </span>
+        </p>
       </div>
-      <div class="col-md-6">
-        <canvas id="ratingChart" style="height: 300px;"></canvas>
+
+      <!-- 注册活动 -->
+      <div class="mb-5">
+        <h4 class="mb-3"><i class="fas fa-calendar-check me-2 text-success"></i>Registered Events</h4>
+        <div v-if="registeredEvents.length" class="row g-4">
+          <div class="col-md-6" v-for="event in registeredEvents" :key="event.id">
+            <div class="card h-100 shadow-sm">
+              <div class="card-body">
+                <h5 class="card-title">{{ event.title }}</h5>
+                <p><strong>Date:</strong> {{ event.date }}</p>
+                <p>{{ event.description }}</p>
+                <p><strong>Avg Rating:</strong> {{ getAvgRating(event) }}</p>
+
+                <div class="mt-2">
+                  <label class="form-label">Your Rating:</label>
+                  <select class="form-select w-auto d-inline-block ms-2" v-model="userRatings[event.id]">
+                    <option disabled value="">Select</option>
+                    <option v-for="n in 5" :key="n" :value="n">{{ n }} ★</option>
+                  </select>
+                  <button class="btn btn-sm btn-outline-primary ms-2" @click="submitRating(event)">
+                    Submit
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p v-else class="text-muted">You haven't joined any events yet.</p>
+      </div>
+
+      <!-- 收藏文章 -->
+      <div>
+        <h4 class="mb-3"><i class="fas fa-star me-2 text-warning"></i>Saved Articles</h4>
+        <div v-if="savedArticles.length" class="row g-3">
+          <div class="col-md-6" v-for="article in savedArticles" :key="article.id">
+            <div class="card shadow-sm">
+              <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="mb-0">{{ article.title }}</h6>
+                </div>
+                <router-link to="/articles" class="btn btn-sm btn-outline-secondary">
+                  Go
+                </router-link>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p v-else class="text-muted">No articles saved yet.</p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import Chart from 'chart.js/auto'
+import { ref, onMounted } from 'vue'
 
-const user = computed(() => JSON.parse(localStorage.getItem('user')))
-const events = ref([])
-const userEvents = ref([])
+const user = JSON.parse(localStorage.getItem('user') || '{}')
+const events = JSON.parse(localStorage.getItem('events') || '[]')
+const articles = ref([])
+const registeredEvents = ref([])
+const savedArticles = ref([])
+const userRatings = ref({})
 
-const stats = computed(() => {
-  const totalEvents = events.value.length
-  const joinedEvents = userEvents.value.length
-  const avgRating = userEvents.value.reduce((sum, event) => {
-    const userRating = user.value?.ratedEvents?.find(r => r.eventId === event.id)?.rating
-    return sum + (userRating || 0)
-  }, 0) / (joinedEvents || 1)
-  return {
-    totalEvents,
-    joinedEvents,
-    avgRating: avgRating.toFixed(1)
-  }
+onMounted(async () => {
+  registeredEvents.value = events.filter(e => e.participants?.includes(user.email))
+
+  user.ratedEvents?.forEach(r => {
+    userRatings.value[r.eventId] = r.rating
+  })
+
+  const allArticles = await fetch('/articles.json').then(r => r.json())
+  savedArticles.value = allArticles.filter(a => user.favorites?.includes(a.id))
 })
 
-const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false
+const getAvgRating = (event) => {
+  if (!event.ratings || event.ratings.length === 0) return 'Not rated'
+  const avg = event.ratings.reduce((a, b) => a + b, 0) / event.ratings.length
+  return avg.toFixed(1) + ' ★'
 }
 
-const prepareMonthlyChartData = () => {
-  const months = Array(12).fill(0)
-  userEvents.value.forEach(event => {
-    const month = new Date(event.date).getMonth()
-    months[month]++
-  })
-  return months
-}
-
-const prepareRatingChartData = () => {
-  const ratings = [0, 0, 0, 0, 0]
-  userEvents.value.forEach(event => {
-    const userRating = user.value?.ratedEvents?.find(r => r.eventId === event.id)?.rating
-    if (userRating) ratings[Math.floor(userRating) - 1]++
-  })
-  return ratings
-}
-
-const renderCharts = (monthlyData, ratingData) => {
-  new Chart(document.getElementById('monthlyChart'), {
-    type: 'bar',
-    data: {
-      labels: monthNames,
-      datasets: [{
-        label: 'Events Joined',
-        data: monthlyData,
-        backgroundColor: 'rgba(54, 162, 235, 0.5)',
-        borderColor: 'rgba(54, 162, 235, 1)',
-        borderWidth: 1
-      }]
-    },
-    options: chartOptions
-  })
-  new Chart(document.getElementById('ratingChart'), {
-    type: 'pie',
-    data: {
-      labels: ['1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'],
-      datasets: [{
-        data: ratingData,
-        backgroundColor: [
-          'rgba(255, 99, 132, 0.5)',
-          'rgba(255, 159, 64, 0.5)',
-          'rgba(255, 205, 86, 0.5)',
-          'rgba(75, 192, 192, 0.5)',
-          'rgba(54, 162, 235, 0.5)'
-        ],
-        borderColor: [
-          'rgba(255, 99, 132, 1)',
-          'rgba(255, 159, 64, 1)',
-          'rgba(255, 205, 86, 1)',
-          'rgba(75, 192, 192, 1)',
-          'rgba(54, 162, 235, 1)'
-        ],
-        borderWidth: 1
-      }]
-    },
-    options: chartOptions
-  })
-}
-
-const loadEvents = () => {
-  const storedEvents = JSON.parse(localStorage.getItem('events')) || []
-  events.value = storedEvents
-  if (user.value) {
-    userEvents.value = storedEvents.filter(event =>
-      event.participants?.includes(user.value.email))
-
-    const monthlyData = prepareMonthlyChartData()
-    const ratingData = prepareRatingChartData()
-    renderCharts(monthlyData, ratingData)
+const submitRating = (event) => {
+  const rating = parseInt(userRatings.value[event.id])
+  if (!rating || rating < 1 || rating > 5) {
+    alert('Please select a rating between 1 and 5.')
+    return
   }
+
+  event.ratings = event.ratings || []
+  event.ratings.push(rating)
+
+  const updatedEvents = events.map(e => e.id === event.id ? event : e)
+  localStorage.setItem('events', JSON.stringify(updatedEvents))
+
+  user.ratedEvents = user.ratedEvents || []
+  const existing = user.ratedEvents.find(r => r.eventId === event.id)
+  if (existing) {
+    existing.rating = rating
+  } else {
+    user.ratedEvents.push({ eventId: event.id, rating })
+  }
+  localStorage.setItem('user', JSON.stringify(user))
+  alert('✅ Rating submitted!')
+}
+</script>
+
+<style scoped>
+.dashboard-wrapper {
+  background: linear-gradient(135deg, #f8fbff, #f2f8ff);
+  min-height: 100vh;
 }
 
-onMounted(loadEvents)
-</script>
+.card {
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fdfaf1, #f4f8ff);
+  transition: all 0.3s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+}
+</style>

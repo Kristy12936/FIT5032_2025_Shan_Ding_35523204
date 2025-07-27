@@ -1,81 +1,135 @@
-// src/views/AdminPanel.vue
 <template>
-  <div class="admin-panel container">
-    <h1>Admin Panel</h1>
+  <div class="admin-panel-page py-5">
+    <div class="container" data-aos="fade-up">
+      <!-- 管理员创建区块 -->
+      <div class="admin-card shadow-sm p-4 mb-5">
+        <h2 class="text-success"><i class="fas fa-tools me-2"></i>Admin Panel</h2>
 
-    <div class="admin-actions">
-      <h2>Create New Event</h2>
-      <form @submit.prevent="createEvent" class="event-form">
-        <div class="mb-3">
-          <label for="title" class="form-label">Event Title</label>
-          <input type="text" id="title" v-model="newEvent.title" class="form-control" required>
+        <div v-if="user?.role === 'admin'">
+          <h4 class="mt-4"><i class="fas fa-plus-circle me-2 text-primary"></i>Create New Event</h4>
+          <form @submit.prevent="addEvent" class="mb-4">
+            <input
+              type="text"
+              v-model="newEvent.title"
+              class="form-control mb-2"
+              placeholder="Title"
+              required
+            />
+            <input
+              type="date"
+              v-model="newEvent.date"
+              class="form-control mb-2"
+              required
+            />
+            <textarea
+              v-model="newEvent.description"
+              class="form-control mb-2"
+              placeholder="Description"
+              required
+            ></textarea>
+            <button type="submit" class="btn btn-success">
+              <i class="fas fa-plus me-1"></i>Create
+            </button>
+          </form>
         </div>
-        <div class="mb-3">
-          <label for="date" class="form-label">Event Date</label>
-          <input type="date" id="date" v-model="newEvent.date" class="form-control" required>
-        </div>
-        <div class="mb-3">
-          <label for="description" class="form-label">Description</label>
-          <textarea id="description" v-model="newEvent.description" class="form-control" required></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary">Create Event</button>
-      </form>
-    </div>
+        <p v-else class="text-danger">You are not authorized to access this page.</p>
+      </div>
 
-    <div class="event-list mt-5">
-      <h2>Manage Events</h2>
+      <!-- 活动列表 -->
       <div v-if="events.length">
-        <div v-for="event in events" :key="event.id" class="border rounded p-3 mb-3">
-          <h5>{{ event.title }}</h5>
-          <p>Date: {{ event.date }}</p>
-          <p>Participants: {{ event.participants?.length || 0 }}</p>
-          <p>Average Rating: {{ calculateAverage(event.ratings) }}</p>
-          <button class="btn btn-danger btn-sm" @click="deleteEvent(event.id)">Delete</button>
+        <h4 class="mb-4 text-primary"><i class="fas fa-list me-2"></i>Existing Events</h4>
+        <div class="row">
+          <div
+            class="col-md-6 col-lg-4 mb-4"
+            v-for="e in events"
+            :key="e.id"
+          >
+            <div class="card event-card h-100 shadow-sm border-0">
+              <div class="card-body">
+                <h5 class="card-title text-dark">{{ e.title }}</h5>
+                <p class="card-text text-muted"><strong>Date:</strong> {{ e.date }}</p>
+                <p class="card-text">{{ e.description }}</p>
+                <p class="text-muted mb-1">👥 Participants: {{ e.participants?.length || 0 }}</p>
+                <p class="text-muted mb-0">⭐ Avg Rating:
+                  <span class="text-warning fw-bold">{{ getAverageRating(e) }}</span>
+                </p>
+              </div>
+              <div class="card-footer bg-white border-0 text-end">
+                <button class="btn btn-outline-danger btn-sm" @click="deleteEvent(e.id)">
+                  <i class="fas fa-trash-alt me-1"></i>Delete
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-      <p v-else>No events created yet.</p>
+
+      <div v-else class="text-center text-muted mt-5">
+        <p>No events available.</p>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 
-const router = useRouter()
 const user = JSON.parse(localStorage.getItem('user'))
-if (!user || user.role !== 'admin') {
-  alert('Unauthorized')
-  router.push('/')
-}
-
-const newEvent = ref({ title: '', date: '', description: '' })
 const events = ref([])
+const newEvent = ref({ title: '', date: '', description: '' })
 
 onMounted(() => {
-  events.value = JSON.parse(localStorage.getItem('events')) || []
+  const storedEvents = JSON.parse(localStorage.getItem('events')) || []
+  events.value = storedEvents
 })
 
-const createEvent = () => {
+const addEvent = () => {
+  const id = Date.now()
   const event = {
-    id: Date.now(),
-    ...newEvent.value,
+    id,
+    title: newEvent.value.title,
+    date: newEvent.value.date,
+    description: newEvent.value.description,
     participants: [],
-    ratings: []
+    ratings: [],
   }
   events.value.push(event)
   localStorage.setItem('events', JSON.stringify(events.value))
   newEvent.value = { title: '', date: '', description: '' }
+  alert('✅ Event created and saved to localStorage!')
 }
 
 const deleteEvent = (id) => {
   events.value = events.value.filter(e => e.id !== id)
   localStorage.setItem('events', JSON.stringify(events.value))
+  alert('🗑️ Event deleted!')
 }
 
-const calculateAverage = (ratings) => {
-  if (!ratings?.length) return 'Not rated yet'
-  const sum = ratings.reduce((a, b) => a + b, 0)
-  return (sum / ratings.length).toFixed(1)
+const getAverageRating = (event) => {
+  if (!event.ratings || event.ratings.length === 0) return 'Not rated'
+  const sum = event.ratings.reduce((a, b) => a + b, 0)
+  return (sum / event.ratings.length).toFixed(1) + ' ★'
 }
 </script>
+
+<style scoped>
+.admin-panel-page {
+  background: linear-gradient(to right, #e3f2fd, #fdfdff);
+  min-height: 100vh;
+}
+
+.admin-card {
+  background: linear-gradient(135deg, #ffffff, #f4f8ff);
+  border-radius: 16px;
+}
+
+.event-card {
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fdfaf1, #f4f8ff);
+  transition: transform 0.3s ease-in-out;
+}
+.event-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+</style>

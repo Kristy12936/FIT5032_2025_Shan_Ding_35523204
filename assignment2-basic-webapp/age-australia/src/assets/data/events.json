@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1001,
+    "title": "Morning Tai Chi in the Park",
+    "date": "2025-08-05",
+    "description": "Join our Tai Chi sessions every Tuesday morning to stay active.",
+    "participants": [],
+    "ratings": []
+  },
+  {
+    "id": 1002,
+    "title": "Healthy Cooking Workshop",
+    "date": "2025-08-10",
+    "description": "Learn to cook nutritious meals with professional chefs.",
+    "participants": [],
+    "ratings": []
+  }
+]
