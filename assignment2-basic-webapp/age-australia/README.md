@@ -1,96 +1,104 @@
-// README.md (Project Root)
+# 👵 EmpowerAge — A Health Support Platform for Older Adults
 
-# AgeAustralia Web Application
+EmpowerAge is a **Vue 3** frontend-only health platform designed to support older adults through informative articles, community events, wellness resources, and feedback features. The system supports user login/registration, role-based access control, event participation and rating, article bookmarking, and responsive UI.
 
-A responsive Vue.js 3 web application designed to support older Australians with accessible health services, events, and community interaction. This system fulfills all Business Requirements (A–C) from the FIT5032 Assignment 2 specification.
+> 🚀 This is a coursework project emphasizing functionality, usability, and design aesthetics. All data is stored in **localStorage** or static **JSON files**.
 
 ---
 
-##  Features Implemented
+## 💻 Tech Stack
 
-### A. Functional Requirements
-- **Vue 3 + Vite + Bootstrap** development stack 
-- **Responsive Design** using Bootstrap Grid 
+- ✅ Vue 3 + Composition API  
+- ✅ Bootstrap 5 (Responsive layout & components)  
+- ✅ PrimeVue (Dialog, buttons, alerts, etc.)  
+- ✅ Font Awesome 6 (Icons)  
+- ✅ AOS.js (Scroll animations)  
+- ✅ JSON (as local data source)
 
-### B. Application Functionality
-- 🔐 User Login & Registration (with validation)
-- 📅 Dynamic Event Listing & Registration (localStorage)
-- ⭐ Rating System with average feedback
+---
 
-### C. Security & Role
-- 🔐 Auth protected routes with role-based routing (user/admin)
-- 🛡️ Basic input validation and access checks
+## 📚 Features
+
+| Module             | Description                                                  |
+| ------------------ | ------------------------------------------------------------ |
+| ✅ User Auth        | Register/Login with email & password validation              |
+| ✅ Role System      | Automatic role detection (admin/user) with protected routes  |
+| ✅ Health Articles  | Browse and bookmark informative articles                     |
+| ✅ Event System     | View, join, and rate local health events                     |
+| ✅ Article Saving   | Save articles and view them in dashboard                     |
+| ✅ Rating System    | Users can rate events (1–5 stars)                            |
+| ✅ Admin Panel      | Admins can create/delete events with rating stats            |
+| ✅ Feedback Module  | Users can submit suggestions (locally stored)                |
+| ✅ Form Validation  | Email format + password strength (min 8 chars, mixed case + digit) |
+| ✅ Health Resources | Nutrition tips, hotlines, support services — filterable      |
+| ✅ Responsive UI    | Mobile and desktop friendly                                  |
+| ✅ Visual Effects   | Gradient backgrounds, hover cards, scroll animations         |
 
 ---
 
 ## 📁 Project Structure
+
 ```
-age-australia/
-├── index.html
-├── package.json
-├── vite.config.js
-├── src/
-│   ├── main.js
-│   ├── App.vue
-│   ├── router/
-│   │   └── index.js
-│   ├── store/
-│   │   └── auth.js
-│   ├── views/
-│   │   ├── Dashboard.vue
-│   │   ├── EventList.vue
-│   │   ├── EventDetail.vue
-│   │   └── AdminPanel.vue
-│   ├── components/
-│   │   ├── Login.vue
-│   │   └── Register.vue
+src/
+├── assets/
+│   └── data/              # JSON files (articles, events, resources)
+├── components/            # Reusable components
+├── views/                 # All main views (Home, Login, AdminPanel, etc.)
+├── router/                # Vue Router setup
+├── App.vue                # Root app
+├── main.js                # Entry point
+public/
+└── bg-pattern.png         # Background image
+index.html                 # HTML template
 ```
 
 ---
 
 ## 🚀 Getting Started
 
-### Install dependencies
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/your-username/empowerage.git
+cd empowerage
+```
+
+### 2. Install Dependencies
+
 ```bash
 npm install
 ```
 
-### Start development server
+### 3. Run Development Server
+
 ```bash
 npm run dev
 ```
 
-Visit: [http://localhost:5173](http://localhost:5173)
+Open your browser at [http://localhost:5173](http://localhost:5173)
 
 ---
 
-## 🧪 Test Users
+## 🛠️ Notes
 
-### Admin
-```
-Email: admin@age.com
-Password: 123456
-```
+- **Admin Role** is granted if registered with `admin@age.com`
+- All data is stored in browser **localStorage**
+- Ensure Bootstrap JS is properly loaded for dropdowns:
 
-### Regular User
-```
-Email: user@example.com
-Password: 123456
+```html
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
 ```
 
 ---
 
-## 📌 Notes
-- Data is stored in localStorage
-- User role assigned during registration
-- Route guards enforce login & admin access
+## 📸 Preview
+
+| Home Page                       | Dashboard                                 | Admin Panel                             |
+| ------------------------------- | ----------------------------------------- | --------------------------------------- |
+| ![Home](./screenshots/home.png) | ![Dashboard](./screenshots/dashboard.png) | ![Admin](./screenshots/admin-panel.png) |
 
 ---
 
-## 📸 Demo Video (Optional)
-Please upload your video to Google Drive and link it here.
+## 📜 License
 
----
-
-## ©️ Author
-This application was created as part of FIT5032 Assignment 2.
+MIT License — for educational purposes only.
