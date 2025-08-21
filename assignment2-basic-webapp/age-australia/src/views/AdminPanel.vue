@@ -1,7 +1,7 @@
 <template>
   <div class="admin-panel-page py-5">
     <div class="container" data-aos="fade-up">
-      <!-- 管理员创建区块 -->
+     
       <div class="admin-card shadow-sm p-4 mb-5">
         <h2 class="text-success"><i class="fas fa-tools me-2"></i>Admin Panel</h2>
 
