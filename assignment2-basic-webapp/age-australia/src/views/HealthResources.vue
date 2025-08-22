@@ -27,7 +27,7 @@
         </div>
       </div>
 
-      <!-- 资源展示 -->
+      <!-- 资源展示卡片 -->
       <div class="row">
         <div
           class="col-md-6 col-lg-4 mb-4"
@@ -36,11 +36,19 @@
         >
           <div class="card h-100 shadow-sm border-0 resource-card" data-aos="zoom-in" data-aos-delay="100">
             <div class="card-body d-flex flex-column">
-              <h5 class="card-title text-primary">
-                <i class="fas fa-stethoscope me-2"></i>{{ item.title }}
-              </h5>
-              <h6 class="text-muted mb-2">{{ item.type }}</h6>
-              <p class="card-text flex-grow-1">{{ item.description }}</p>
+              <!-- 图标 + 标题 -->
+              <div class="d-flex align-items-center mb-2">
+                <i :class="['fas', item.icon || 'fa-leaf', 'fa-2x', 'text-success', 'me-3']"></i>
+                <div>
+                  <h5 class="card-title text-primary mb-0">{{ item.title }}</h5>
+                  <small class="text-muted">{{ item.type }}</small>
+                </div>
+              </div>
+
+              <!-- 描述文字 -->
+              <p class="card-text flex-grow-1 mt-2">{{ item.description }}</p>
+
+              <!-- 可选链接 -->
               <a
                 v-if="item.link"
                 :href="item.link"
@@ -54,6 +62,7 @@
         </div>
       </div>
 
+      <!-- 无内容提示 -->
       <p v-if="filteredResources.length === 0" class="text-center text-muted mt-4">
         No resources available.
       </p>
@@ -88,28 +97,34 @@ const filteredResources = computed(() => {
 </script>
 
 <style scoped>
-/* ✅ 页面背景 */
 .health-wrapper {
   background: linear-gradient(135deg, #f8fbff, #f2f8ff);
   min-height: 100vh;
 }
 
-/* ✅ 卡片样式 */
 .resource-card {
   border-radius: 14px;
-  background: linear-gradient(145deg, #fdf8f4, #f1f6ff);
+  background: linear-gradient(145deg, #ffffff, #f1f6ff);
   transition: all 0.3s ease;
 }
 .resource-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 123, 255, 0.1);
 }
 
-/* ✅ 分类按钮样式 */
 .btn-group .btn.active {
   background-color: #0d6efd;
   color: white;
   font-weight: 500;
   box-shadow: 0 0 8px rgba(13, 110, 253, 0.3);
+}
+
+.card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.fa-2x {
+  font-size: 1.6rem !important;
 }
 </style>

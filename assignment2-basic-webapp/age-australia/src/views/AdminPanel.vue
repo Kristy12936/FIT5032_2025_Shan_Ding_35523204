@@ -1,135 +1,118 @@
+<!-- /src/views/AdminPanel.vue -->
 <template>
-  <div class="admin-panel-page py-5">
-    <div class="container" data-aos="fade-up">
-     
-      <div class="admin-card shadow-sm p-4 mb-5">
-        <h2 class="text-success"><i class="fas fa-tools me-2"></i>Admin Panel</h2>
+  <div class="container py-5" data-aos="fade-up">
+    <h2 class="text-primary mb-4">Admin Panel - Manage Events</h2>
 
-        <div v-if="user?.role === 'admin'">
-          <h4 class="mt-4"><i class="fas fa-plus-circle me-2 text-primary"></i>Create New Event</h4>
-          <form @submit.prevent="addEvent" class="mb-4">
-            <input
-              type="text"
-              v-model="newEvent.title"
-              class="form-control mb-2"
-              placeholder="Title"
-              required
-            />
-            <input
-              type="date"
-              v-model="newEvent.date"
-              class="form-control mb-2"
-              required
-            />
-            <textarea
-              v-model="newEvent.description"
-              class="form-control mb-2"
-              placeholder="Description"
-              required
-            ></textarea>
-            <button type="submit" class="btn btn-success">
-              <i class="fas fa-plus me-1"></i>Create
-            </button>
-          </form>
+    <!-- 只有管理员可见（用邮箱判断，不再依赖 user.role） -->
+    <div v-if="isAdmin">
+      <!-- 创建活动 -->
+      <form @submit.prevent="createEvent" class="p-3 border rounded bg-light mb-5">
+        <div class="mb-3">
+          <label class="form-label">Title</label>
+          <input v-model="form.title" type="text" class="form-control" required />
         </div>
-        <p v-else class="text-danger">You are not authorized to access this page.</p>
-      </div>
 
-      <!-- 活动列表 -->
+        <div class="mb-3">
+          <label class="form-label">Date</label>
+          <input v-model="form.date" type="date" class="form-control" required />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <textarea v-model="form.description" class="form-control" rows="3" required></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-success">Create Event</button>
+      </form>
+
+      <!-- 活动列表（实时） -->
+      <h4 class="mb-3">All Events</h4>
       <div v-if="events.length">
-        <h4 class="mb-4 text-primary"><i class="fas fa-list me-2"></i>Existing Events</h4>
-        <div class="row">
-          <div
-            class="col-md-6 col-lg-4 mb-4"
-            v-for="e in events"
-            :key="e.id"
-          >
-            <div class="card event-card h-100 shadow-sm border-0">
-              <div class="card-body">
-                <h5 class="card-title text-dark">{{ e.title }}</h5>
-                <p class="card-text text-muted"><strong>Date:</strong> {{ e.date }}</p>
-                <p class="card-text">{{ e.description }}</p>
-                <p class="text-muted mb-1">👥 Participants: {{ e.participants?.length || 0 }}</p>
-                <p class="text-muted mb-0">⭐ Avg Rating:
-                  <span class="text-warning fw-bold">{{ getAverageRating(e) }}</span>
-                </p>
-              </div>
-              <div class="card-footer bg-white border-0 text-end">
-                <button class="btn btn-outline-danger btn-sm" @click="deleteEvent(e.id)">
-                  <i class="fas fa-trash-alt me-1"></i>Delete
-                </button>
-              </div>
-            </div>
+        <div
+          v-for="e in events"
+          :key="e.id"
+          class="list-group-item d-flex justify-content-between align-items-center mb-2 border rounded p-3"
+        >
+          <div>
+            <div class="fw-bold">{{ e.title }}</div>
+            <div class="text-muted">Date: {{ e.date }}</div>
           </div>
+          <button class="btn btn-outline-danger btn-sm" @click="deleteEvent(e.id)">Delete</button>
         </div>
       </div>
-
-      <div v-else class="text-center text-muted mt-5">
-        <p>No events available.</p>
-      </div>
+      <div v-else class="text-muted">No events found.</div>
     </div>
+
+    <div v-else class="alert alert-warning">You are not authorized to access this page.</div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { collection, addDoc, onSnapshot, deleteDoc, doc, serverTimestamp } from 'firebase/firestore'
+import { db } from '../firebase'
+import { useAuthStore } from '../store/auth'
 
-const user = JSON.parse(localStorage.getItem('user'))
-const events = ref([])
-const newEvent = ref({ title: '', date: '', description: '' })
+const auth = useAuthStore()
+const user = computed(() => auth.user)
 
-onMounted(() => {
-  const storedEvents = JSON.parse(localStorage.getItem('events')) || []
-  events.value = storedEvents
+// ✅ 用邮箱判断管理员（和你导航一致）
+const isAdmin = computed(() => user.value?.email === 'admin@age.com')
+
+// 表单
+const form = ref({
+  title: '',
+  date: '',
+  description: '',
 })
 
-const addEvent = () => {
-  const id = Date.now()
-  const event = {
-    id,
-    title: newEvent.value.title,
-    date: newEvent.value.date,
-    description: newEvent.value.description,
+// 实时活动列表
+const events = ref([])
+
+onMounted(() => {
+  const colRef = collection(db, 'events')
+  onSnapshot(colRef, snap => {
+    events.value = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  })
+})
+
+// ✅ 函数名与表单 @submit 保持一致：createEvent
+const createEvent = async () => {
+  if (!isAdmin.value) return
+
+  const payload = {
+    title: form.value.title.trim(),
+    date: form.value.date,
+    description: form.value.description.trim(),
     participants: [],
     ratings: [],
+    createdAt: serverTimestamp(),
   }
-  events.value.push(event)
-  localStorage.setItem('events', JSON.stringify(events.value))
-  newEvent.value = { title: '', date: '', description: '' }
-  alert('✅ Event created and saved to localStorage!')
+
+  if (!payload.title || !payload.date || !payload.description) return
+
+  try {
+    await addDoc(collection(db, 'events'), payload)
+    // 清空表单
+    form.value = { title: '', date: '', description: '' }
+    alert('✅ Event created successfully!')
+  } catch (err) {
+    console.error('Create failed:', err)
+    alert('❌ Failed to create event.')
+  }
 }
 
-const deleteEvent = (id) => {
-  events.value = events.value.filter(e => e.id !== id)
-  localStorage.setItem('events', JSON.stringify(events.value))
-  alert('🗑️ Event deleted!')
-}
-
-const getAverageRating = (event) => {
-  if (!event.ratings || event.ratings.length === 0) return 'Not rated'
-  const sum = event.ratings.reduce((a, b) => a + b, 0)
-  return (sum / event.ratings.length).toFixed(1) + ' ★'
+const deleteEvent = async (id) => {
+  if (!isAdmin.value) return
+  try {
+    await deleteDoc(doc(db, 'events', id))
+  } catch (err) {
+    console.error('Delete failed:', err)
+    alert('❌ Failed to delete.')
+  }
 }
 </script>
 
 <style scoped>
-.admin-panel-page {
-  background: linear-gradient(to right, #e3f2fd, #fdfdff);
-  min-height: 100vh;
-}
-
-.admin-card {
-  background: linear-gradient(135deg, #ffffff, #f4f8ff);
-  border-radius: 16px;
-}
-
-.event-card {
-  border-radius: 16px;
-  background: linear-gradient(135deg, #fdfaf1, #f4f8ff);
-  transition: transform 0.3s ease-in-out;
-}
-.event-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-}
+.list-group-item { background: #fff; }
 </style>

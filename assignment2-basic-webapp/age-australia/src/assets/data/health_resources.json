@@ -18,5 +18,35 @@
     "title": "Elder Care Support",
     "type": "Social Support",
     "description": "Visit local community centers or call 1800 CARE AGE to learn more about elder care services."
+  },
+  {
+    "title": "Medication Safety Tips",
+    "type": "Health Care",
+    "description": "Always follow your doctor's instructions when taking medication. Use a pill organizer to stay on track."
+  },
+  {
+    "title": "Fall Prevention Checklist",
+    "type": "Home Safety",
+    "description": "Keep floors clutter-free, install grab bars in bathrooms, and wear non-slip footwear at home."
+  },
+  {
+    "title": "Sleep Hygiene for Seniors",
+    "type": "Wellness",
+    "description": "Maintain a consistent sleep schedule and avoid caffeine before bedtime to improve sleep quality."
+  },
+  {
+    "title": "Hydration Reminders",
+    "type": "Nutrition",
+    "description": "Drink at least 6-8 glasses of water daily. Use reminder apps or a schedule if needed."
+  },
+  {
+    "title": "Cognitive Health Resources",
+    "type": "Brain Health",
+    "description": "Stimulate your mind with puzzles, reading, and social interaction to maintain mental sharpness."
+  },
+  {
+    "title": "Aged Care Legal Advice",
+    "type": "Legal Support",
+    "description": "Call 1800 LEGAL HELP for free legal advice on wills, powers of attorney, and elder rights."
   }
 ]

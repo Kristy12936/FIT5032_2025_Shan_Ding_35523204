@@ -1,45 +1,49 @@
-  // src/main.js
-  import { createApp } from 'vue'
-  import App from './App.vue'
-  import router from './router'
-  import { createPinia } from 'pinia'
+// src/main.js
+import { createApp } from 'vue'
+import App from './App.vue'
+import router from './router'
+import { createPinia } from 'pinia'
 
-  // 样式导入
-  import 'bootstrap/dist/css/bootstrap.min.css'
-  import 'aos/dist/aos.css'
-  import AOS from 'aos'
+// 样式导入
+import 'bootstrap/dist/css/bootstrap.min.css'
+import 'aos/dist/aos.css'
+import AOS from 'aos'
 
-  // PrimeVue 样式和组件
-  import PrimeVue from 'primevue/config'
-  import Button from 'primevue/button'
-  import Textarea from 'primevue/textarea'
-  import ConfirmDialog from 'primevue/confirmdialog'
-  import ConfirmationService from 'primevue/confirmationservice'
-  import 'primevue/resources/themes/lara-light-blue/theme.css'
-  import 'primevue/resources/primevue.min.css'
-  import 'primeicons/primeicons.css'
-  import 'bootstrap/dist/css/bootstrap.min.css'
-  import 'bootstrap/dist/js/bootstrap.bundle.min.js' // 👈 这一行非常重要！
+// PrimeVue 样式和核心插件
+import PrimeVue from 'primevue/config'
+import 'primevue/resources/themes/lara-light-blue/theme.css'
+import 'primevue/resources/primevue.min.css'
+import 'primeicons/primeicons.css'
 
+// Bootstrap JS
+import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 
+// ✅ PrimeVue 组件注册
+import Button from 'primevue/button'
+import Textarea from 'primevue/textarea'
+import ConfirmDialog from 'primevue/confirmdialog'
+import ConfirmationService from 'primevue/confirmationservice'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
 
+// ✅ 创建应用
+const app = createApp(App)
 
-  // ✅ 1. 创建 app 实例
-  const app = createApp(App)
+// ✅ 使用插件
+app.use(router)
+app.use(createPinia())
+app.use(PrimeVue)
+app.use(ConfirmationService)
 
-  // ✅ 2. 安装插件
-  app.use(router)
-  app.use(createPinia())
-  app.use(PrimeVue)
-  app.use(ConfirmationService)
+// ✅ 注册全局组件
+app.component('Button', Button)
+app.component('Textarea', Textarea)
+app.component('ConfirmDialog', ConfirmDialog)
+app.component('DataTable', DataTable)
+app.component('Column', Column)
 
-  // ✅ 3. 注册全局组件
-  app.component('Button', Button)
-  app.component('Textarea', Textarea)
-  app.component('ConfirmDialog', ConfirmDialog)
-
-  // ✅ 4. 初始化动画库并挂载
-  router.isReady().then(() => {
-    AOS.init()
-    app.mount('#app')
-  })
+// ✅ 等路由就绪后挂载并初始化 AOS
+router.isReady().then(() => {
+  AOS.init()
+  app.mount('#app')
+})

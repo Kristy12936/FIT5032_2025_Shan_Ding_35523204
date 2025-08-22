@@ -1,17 +1,41 @@
 [
   {
-    "id": 1001,
-    "title": "Morning Tai Chi in the Park",
-    "date": "2025-08-05",
-    "description": "Join our Tai Chi sessions every Tuesday morning to stay active.",
+    "id": 3001,
+    "title": "Mindfulness Meditation Session",
+    "date": "2025-09-05",
+    "description": "Practice mindfulness and breathing exercises to reduce stress and enhance mental clarity.",
     "participants": [],
     "ratings": []
   },
   {
-    "id": 1002,
-    "title": "Healthy Cooking Workshop",
-    "date": "2025-08-10",
-    "description": "Learn to cook nutritious meals with professional chefs.",
+    "id": 3002,
+    "title": "Chair Yoga for Flexibility",
+    "date": "2025-09-15",
+    "description": "A gentle yoga session using chairs for support, focusing on flexibility and joint health.",
+    "participants": [],
+    "ratings": []
+  },
+  {
+    "id": 3003,
+    "title": "Senior Book Club Meetup",
+    "date": "2025-10-01",
+    "description": "Join our monthly book discussion with fellow readers and share your favorite stories.",
+    "participants": [],
+    "ratings": []
+  },
+  {
+    "id": 3004,
+    "title": "Healthy Aging Nutrition Talk",
+    "date": "2025-10-20",
+    "description": "Learn from a nutritionist about diet choices that support healthy aging and vitality.",
+    "participants": [],
+    "ratings": []
+  },
+  {
+    "id": 3005,
+    "title": "Community Walk & Talk",
+    "date": "2025-11-03",
+    "description": "Enjoy a light walk in the park while chatting and connecting with peers.",
     "participants": [],
     "ratings": []
   }

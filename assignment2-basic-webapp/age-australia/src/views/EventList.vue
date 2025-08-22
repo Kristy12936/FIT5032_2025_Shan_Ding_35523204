@@ -1,116 +1,103 @@
 <template>
-  <div class="container mt-4">
-    <h2 class="mb-4 text-center" data-aos="fade-up">🌟 Community Events</h2>
+  <div class="event-list-wrapper py-5">
+    <div class="container" data-aos="fade-up">
+      <h2 class="text-center text-primary mb-5">
+        <i class="fas fa-calendar-alt me-2"></i>Upcoming Events
+      </h2>
 
-    <div v-if="events.length" class="row">
-      <div 
-        class="col-md-6 col-lg-4 mb-4" 
-        v-for="event in events" 
-        :key="event.id" 
-        data-aos="fade-up" 
-        data-aos-delay="100"
-      >
-        <div class="card h-100 shadow-sm border-0">
-          <img 
-            :src="event.image || defaultImage" 
-            class="card-img-top" 
-            alt="event" 
-            style="height: 180px; object-fit: cover;"
-          />
-          <div class="card-body">
-            <h5 class="card-title">{{ event.title }}</h5>
-            <p class="card-text"><strong>Date:</strong> {{ event.date }}</p>
-            <p class="card-text">{{ event.description }}</p>
-            <p class="card-text text-muted">👥 Participants: {{ event.participants?.length || 0 }}</p>
-            <p class="card-text text-muted">⭐ Avg Rating: {{ calculateAverage(event.ratings) }}</p>
-          </div>
-          <div class="card-footer bg-white border-0 d-flex justify-content-between px-3 pb-3">
-            <button 
-              class="btn btn-outline-primary btn-sm" 
-              @click="register(event)" 
-              :disabled="hasJoined(event)">
-              {{ hasJoined(event) ? '✅ Registered' : 'Join Event' }}
-            </button>
-            <router-link :to="`/event/${event.id}`" class="btn btn-sm btn-secondary">
-              View Details
-            </router-link>
+      <!-- 活动卡片 -->
+      <div class="row">
+        <div
+          class="col-md-6 col-lg-4 mb-4"
+          v-for="event in sortedEvents"
+          :key="event.id"
+        >
+          <div class="card event-card h-100 shadow-sm" data-aos="zoom-in">
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title text-success">
+                <i class="fas fa-star me-2"></i>{{ event.title }}
+              </h5>
+              <p class="text-muted mb-2">
+                <i class="fas fa-clock me-2"></i>
+                <strong>Date:</strong> {{ formatDate(event.date) }}
+              </p>
+              <p class="card-text flex-grow-1">
+                {{ event.description || 'No description available.' }}
+              </p>
+              <router-link
+                :to="`/event/${event.id}`"
+                class="btn btn-outline-primary btn-sm align-self-start mt-2"
+              >
+                <i class="fas fa-info-circle me-1"></i>View Details
+              </router-link>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div v-else data-aos="fade-in" class="text-center">
-      <p>No events available at the moment.</p>
+      <!-- 没有活动时 -->
+      <p v-if="sortedEvents.length === 0" class="text-center text-muted mt-4">
+        No upcoming events.
+      </p>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { collection, onSnapshot } from 'firebase/firestore'
+import { db } from '../firebase'
 
 const events = ref([])
-const router = useRouter()
-const defaultImage = '/banner-default.jpg'
 
-const user = computed(() => JSON.parse(localStorage.getItem('user')))
-
-onMounted(async () => {
-  const cached = JSON.parse(localStorage.getItem('events'))
-  if (cached && cached.length) {
-    events.value = cached
-  } else {
-    const res = await fetch('/events.json')
-    const fetched = await res.json()
-    events.value = fetched
-    localStorage.setItem('events', JSON.stringify(fetched))
-  }
-
-  // 添加默认图片（如果没有 image 字段）
-  events.value.forEach(e => {
-    if (!e.image) e.image = defaultImage
+onMounted(() => {
+  const eventsRef = collection(db, 'events')
+  onSnapshot(eventsRef, (snapshot) => {
+    events.value = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }))
   })
 })
 
-const hasJoined = (event) => {
-  return event.participants?.includes(user.value?.email)
+// ✅ 时间格式优化
+const formatDate = (dateStr) => {
+  const date = new Date(dateStr)
+  return date.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
 }
 
-const register = (event) => {
-  if (!user.value) {
-    router.push('/login')
-    return
-  }
-
-  if (!event.participants) event.participants = []
-  if (!event.participants.includes(user.value.email)) {
-    event.participants.push(user.value.email)
-    const updated = events.value.map(e => e.id === event.id ? event : e)
-    events.value = updated
-    localStorage.setItem('events', JSON.stringify(updated))
-    alert('🎉 Successfully joined the event!')
-  }
-}
-
-const calculateAverage = (ratings) => {
-  if (!ratings || ratings.length === 0) return 'Not rated yet'
-  const sum = ratings.reduce((acc, r) => acc + r, 0)
-  return (sum / ratings.length).toFixed(1)
-}
+// ✅ 按时间排序
+const sortedEvents = computed(() => {
+  return events.value.slice().sort((a, b) => new Date(a.date) - new Date(b.date))
+})
 </script>
 
 <style scoped>
-.card {
-  border-radius: 16px;
-  background: linear-gradient(145deg, #fdf8f4, #f1f6ff); /* 🌈 淡暖渐变 */
-  border: none;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-  transition: transform 0.3s ease-in-out;
+.event-list-wrapper {
+  background: linear-gradient(to right, #f8fbff, #f1f8ff);
+  min-height: 100vh;
 }
 
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+/* 卡片美化 */
+.event-card {
+  border-radius: 14px;
+  background: linear-gradient(145deg, #ffffff, #f2f8ff);
+  transition: all 0.3s ease;
+}
+.event-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 123, 255, 0.15);
 }
 
+.card-title {
+  font-weight: 600;
+}
+
+.text-muted {
+  font-size: 0.9rem;
+}
 </style>
