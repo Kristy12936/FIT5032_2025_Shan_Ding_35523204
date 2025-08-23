@@ -62,7 +62,7 @@ Open http://localhost:5173
 
 🛠️ Usage Notes
 
-👤 The email admin@age.com is automatically granted admin privileges,and the admin's password is Ds20021206!
+👤 The email admin@age.com is automatically granted admin privileges,and the admin's password is Ds20021206
 
 🧠 Data such as saved articles, feedback, event registration, and ratings are stored in browser localStorage.
 
