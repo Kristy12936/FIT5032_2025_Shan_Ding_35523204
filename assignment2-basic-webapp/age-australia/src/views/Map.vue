@@ -1,34 +1,27 @@
-<!-- src/views/Map.vue -->
+<!-- src/views/Map.vue (Leaflet + OSM 版本) -->
 <template>
   <div class="map-page">
-    <!-- 地图容器 -->
     <div ref="mapEl" class="map-container">
       <div v-if="loading" class="loading">
         <div class="spinner"></div>
         <div>Loading map…</div>
       </div>
-      <div v-if="!token" class="token-warning">
-        <p><strong>Missing Mapbox token.</strong></p>
-        <p>Please set <code>VITE_MAPBOX_TOKEN</code> in Cloudflare Pages Variables.</p>
-      </div>
     </div>
 
-    <!-- 操作面板 -->
     <div class="panel shadow">
-      <h5 class="mb-2">Find & Navigate</h5>
+      <h5 class="mb-2">Find & Navigate (OSM)</h5>
 
       <div class="input-row">
         <input
           v-model="query"
           placeholder="Search places (e.g., library, hospital)"
           @keyup.enter="searchPlace"
+          aria-label="Search places"
         />
         <button @click="searchPlace">Search</button>
       </div>
 
-      <div v-if="errorMsg" class="alert">
-        {{ errorMsg }}
-      </div>
+      <div v-if="errorMsg" class="alert">{{ errorMsg }}</div>
 
       <div v-if="tripInfo" class="trip">
         <div><strong>Distance:</strong> {{ tripInfo.km }} km</div>
@@ -36,7 +29,7 @@
       </div>
 
       <div class="hint">
-        Tip: allow location permission to route from your current position.
+        Data source: OpenStreetMap + Nominatim + OSRM (free).
       </div>
     </div>
   </div>
@@ -44,176 +37,170 @@
 
 <script setup>
 import { onMounted, onBeforeUnmount, ref } from 'vue'
-import 'mapbox-gl/dist/mapbox-gl.css'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 
-const token = import.meta.env.VITE_MAPBOX_TOKEN
+// 修复打包后默认 marker 图标丢失的问题（Vite 常见）
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
+import iconUrl from 'leaflet/dist/images/marker-icon.png'
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
+L.Icon.Default.mergeOptions({ iconRetinaUrl, iconUrl, shadowUrl })
+
 const mapEl = ref(null)
 const map = ref(null)
 const loading = ref(true)
 const errorMsg = ref('')
+
 const query = ref('')
-const userMarker = ref(null)
-const destMarker = ref(null)
-const routeSourceId = 'route-source'
-const routeLayerId = 'route-layer'
+let userMarker = null
+let destMarker = null
+let routeLayer = null
+
 const tripInfo = ref(null)
 
-// ---- helpers ----
-function removeRouteIfExists() {
-  if (!map.value) return
-  if (map.value.getLayer(routeLayerId)) map.value.removeLayer(routeLayerId)
-  if (map.value.getSource(routeSourceId)) map.value.removeSource(routeSourceId)
+function clearRoute() {
+  if (routeLayer) {
+    routeLayer.remove()
+    routeLayer = null
+  }
+  tripInfo.value = null
 }
 
-function placeMarker(lngLat, type) {
+function setMarker(lat, lng, type) {
   if (!map.value) return
-  const color = type === 'user' ? '#2ECC71' : '#E67E22'
-  const marker = new mapboxgl.Marker({ color }).setLngLat(lngLat).addTo(map.value)
+  const m = L.marker([lat, lng], {
+    // 可换颜色图标的话可以用自定义 icon，这里先用默认
+  }).addTo(map.value)
+
   if (type === 'user') {
-    if (userMarker.value) userMarker.value.remove()
-    userMarker.value = marker
+    if (userMarker) userMarker.remove()
+    userMarker = m
   } else {
-    if (destMarker.value) destMarker.value.remove()
-    destMarker.value = marker
+    if (destMarker) destMarker.remove()
+    destMarker = m
   }
 }
 
-// ---- search + route ----
+// OSM Nominatim 地理编码（免费，有限流；请勿高频并发）
+async function geocode(q) {
+  const url =
+    'https://nominatim.openstreetmap.org/search?' +
+    new URLSearchParams({ format: 'json', q })
+  const res = await fetch(url, {
+    headers: { 'Accept-Language': 'en' } // 可选：稳定英文结果
+  })
+  const data = await res.json()
+  return data?.[0] // 取第一个结果
+}
+
+// OSRM 公共路由服务（免费，有限流；仅演示用途）
+async function route(from, to) {
+  const url =
+    `https://router.project-osrm.org/route/v1/driving/` +
+    `${from.lng},${from.lat};${to.lng},${to.lat}` +
+    `?overview=full&geometries=geojson`
+  const r = await fetch(url)
+  const j = await r.json()
+  return j?.routes?.[0]
+}
+
 async function searchPlace() {
   errorMsg.value = ''
-  tripInfo.value = null
-  removeRouteIfExists()
+  clearRoute()
 
-  if (!query.value) {
+  if (!query.value.trim()) {
     errorMsg.value = 'Please enter a keyword.'
     return
   }
-  if (!map.value || !token) return
 
   try {
-    // 1) Geocoding
-    const url =
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/` +
-      `${encodeURIComponent(query.value)}.json?limit=1&access_token=${token}`
-    const res = await fetch(url)
-    const data = await res.json()
-    const place = data?.features?.[0]
-    if (!place) {
+    const p = await geocode(query.value.trim())
+    if (!p) {
       errorMsg.value = 'No result found.'
       return
     }
 
-    const [lng, lat] = place.center
-    placeMarker([lng, lat], 'dest')
-    map.value.flyTo({ center: [lng, lat], zoom: 14 })
+    const lat = parseFloat(p.lat)
+    const lon = parseFloat(p.lon)
+    setMarker(lat, lon, 'dest')
+    map.value.setView([lat, lon], 14)
 
-    // 2) Try to route from user location
+    // 试图从用户位置规划路线（允许失败）
     await new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
-          const start = [pos.coords.longitude, pos.coords.latitude]
-          placeMarker(start, 'user')
+          const start = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+          const end = { lat, lng: lon }
+          setMarker(start.lat, start.lng, 'user')
 
-          const routeUrl =
-            `https://api.mapbox.com/directions/v5/mapbox/driving/` +
-            `${start[0]},${start[1]};${lng},${lat}?geometries=geojson&overview=full&access_token=${token}`
-          const r = await fetch(routeUrl)
-          const j = await r.json()
-          const route = j?.routes?.[0]
-          if (route) {
-            map.value.addSource(routeSourceId, {
-              type: 'geojson',
-              data: { type: 'Feature', geometry: route.geometry }
+          const r = await route(start, end)
+          if (r?.geometry) {
+            const line = L.geoJSON(r.geometry, {
+              style: { color: '#0d6efd', weight: 5 }
             })
-            map.value.addLayer({
-              id: routeLayerId,
-              type: 'line',
-              source: routeSourceId,
-              layout: { 'line-cap': 'round', 'line-join': 'round' },
-              paint: { 'line-color': '#0d6efd', 'line-width': 5 }
-            })
+            line.addTo(map.value)
+            routeLayer = line
+
+            // 距离米→公里、时长秒→分钟
             tripInfo.value = {
-              km: Math.round((route.distance || 0) / 10) / 100,
-              mins: Math.round((route.duration || 0) / 60)
+              km: Math.round((r.distance || 0) / 10) / 100,
+              mins: Math.round((r.duration || 0) / 60)
             }
+
+            // 视野适配整条路线
+            map.value.fitBounds(line.getBounds(), { padding: [30, 30] })
           }
           resolve()
         },
-        () => {
-          // 定位失败：只飞到目的地
-          resolve()
-        },
+        () => resolve(), // 拒绝定位也继续（只标注目的地）
         { enableHighAccuracy: true, timeout: 8000 }
       )
     })
   } catch (e) {
-    errorMsg.value = 'Search failed, please try again.'
     console.error(e)
+    errorMsg.value = 'Search failed. Please try again.'
   }
 }
 
 let resizeObs = null
-let mapboxgl // 动态导入以保证在构建环境下稳定
 
-onMounted(async () => {
-  try {
-    if (!token) {
-      loading.value = false
-      return
-    }
-    mapboxgl = (await import('mapbox-gl')).default
-    mapboxgl.accessToken = token
+onMounted(() => {
+  map.value = L.map(mapEl.value).setView([-37.8136, 144.9631], 12) // Melbourne
 
-    map.value = new mapboxgl.Map({
-      container: mapEl.value,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [144.9631, -37.8136], // Melbourne
-      zoom: 12
-    })
+  // OSM 瓦片（不需要 token）
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map.value)
 
-    map.value.addControl(new mapboxgl.NavigationControl(), 'top-right')
+  // 缩放控件默认就在左上，不需要额外添加
 
-    map.value.on('load', () => {
-      loading.value = false
-      // 初次尝试获取用户位置
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const here = [pos.coords.longitude, pos.coords.latitude]
-          placeMarker(here, 'user')
-          map.value.flyTo({ center: here, zoom: 13 })
-        },
-        () => {}
-      )
-    })
+  // 初次尝试定位用户位置
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      setMarker(pos.coords.latitude, pos.coords.longitude, 'user')
+      map.value.setView([pos.coords.latitude, pos.coords.longitude], 13)
+    },
+    () => {}
+  )
 
-    // 监听容器尺寸变化，自动 resize（避免“看起来变小/空白”）
-    resizeObs = new ResizeObserver(() => {
-      map.value && map.value.resize()
-    })
-    resizeObs.observe(mapEl.value)
-  } catch (e) {
-    loading.value = false
-    errorMsg.value = 'Failed to initialize the map.'
-    console.error(e)
-  }
+  loading.value = false
+
+  // 自动 resize
+  resizeObs = new ResizeObserver(() => {
+    map.value && map.value.invalidateSize()
+  })
+  resizeObs.observe(mapEl.value)
 })
 
 onBeforeUnmount(() => {
-  if (userMarker.value) userMarker.value.remove()
-  if (destMarker.value) destMarker.value.remove()
   if (resizeObs && mapEl.value) resizeObs.unobserve(mapEl.value)
   if (map.value) map.value.remove()
 })
 </script>
 
 <style scoped>
-/* 整页容器：顶部若有导航，减去它的高度。这里按 64px 估算。 */
-.map-page {
-  position: relative;
-  min-height: calc(100vh - 64px);
-}
-
-/* 地图容器：填满可视区域，保证最小高度不小于 520px */
+.map-page { position: relative; min-height: calc(100vh - 64px); }
 .map-container {
   width: 100%;
   height: calc(100vh - 64px);
@@ -222,71 +209,34 @@ onBeforeUnmount(() => {
   border-radius: 14px;
   overflow: hidden;
 }
-
-/* 左上角面板（自适应屏幕） */
 .panel {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  background: #fff;
-  padding: 14px;
-  border-radius: 12px;
-  width: 360px;
-  max-width: min(92vw, 420px);
+  position: absolute; top: 16px; left: 16px;
+  background: #fff; padding: 14px; border-radius: 12px;
+  width: 360px; max-width: min(92vw, 420px);
   box-shadow: 0 8px 24px rgba(0,0,0,.12);
 }
-
 .input-row { display: flex; gap: 8px; }
 .input-row input {
-  flex: 1;
-  padding: 10px 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  outline: none;
+  flex: 1; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px;
 }
-.input-row input:focus { border-color: #0d6efd; }
+.input-row input:focus { border-color: #0d6efd; outline: none; }
 .input-row button {
-  padding: 10px 14px;
-  border: none;
-  border-radius: 10px;
-  background:#0d6efd; color:#fff; cursor:pointer;
+  padding: 10px 14px; border: none; border-radius: 10px; background:#0d6efd; color:#fff;
 }
-
-.trip {
-  margin-top: 10px;
-  background:#f6f9ff;
-  padding:10px 12px;
-  border-radius:10px;
-  font-size: 14px;
-}
+.trip { margin-top: 10px; background:#f6f9ff; padding:10px 12px; border-radius:10px; font-size: 14px; }
 .hint { font-size: 12px; color:#666; margin-top:8px; }
-
-/* 加载与 Token 提示 */
-.loading, .token-warning {
-  position: absolute; inset: 0;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
+.loading {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 10px; color: #444;
 }
 .spinner {
-  width: 28px; height: 28px; border-radius: 50%;
-  border: 3px solid #ddd; border-top-color: #0d6efd;
+  width: 28px; height: 28px; border-radius: 50%; border: 3px solid #ddd; border-top-color: #0d6efd;
   animation: spin 1s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-
 .alert {
-  margin-top: 10px;
-  background: #fff5f5;
-  border: 1px solid #ffd6d6;
-  color: #b42318;
-  padding: 8px 10px;
-  border-radius: 8px;
-  font-size: 13px;
+  margin-top: 10px; background: #fff5f5; border: 1px solid #ffd6d6; color: #b42318;
+  padding: 8px 10px; border-radius: 8px; font-size: 13px;
 }
-
-/* 小屏优化 */
-@media (max-width: 600px) {
-  .panel { left: 8px; right: 8px; width: auto; }
-}
+@media (max-width: 600px) { .panel { left: 8px; right: 8px; width: auto; } }
 </style>
