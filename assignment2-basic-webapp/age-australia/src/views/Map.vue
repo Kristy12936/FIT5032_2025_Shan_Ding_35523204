@@ -1,6 +1,7 @@
-<!-- src/views/Map.vue (Leaflet + OSM 版本) -->
+<!-- src/views/Map.vue  (Leaflet + OSM with fixed overlay panel) -->
 <template>
   <div class="map-page">
+    <!-- 地图容器 -->
     <div ref="mapEl" class="map-container">
       <div v-if="loading" class="loading">
         <div class="spinner"></div>
@@ -8,6 +9,7 @@
       </div>
     </div>
 
+    <!-- 顶部浮动面板（搜索与导航） -->
     <div class="panel shadow">
       <h5 class="mb-2">Find & Navigate (OSM)</h5>
 
@@ -40,7 +42,7 @@ import { onMounted, onBeforeUnmount, ref } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-// 修复打包后默认 marker 图标丢失的问题（Vite 常见）
+// 修复打包后默认 marker 图标丢失（Vite 常见）
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
 import iconUrl from 'leaflet/dist/images/marker-icon.png'
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
@@ -68,10 +70,7 @@ function clearRoute() {
 
 function setMarker(lat, lng, type) {
   if (!map.value) return
-  const m = L.marker([lat, lng], {
-    // 可换颜色图标的话可以用自定义 icon，这里先用默认
-  }).addTo(map.value)
-
+  const m = L.marker([lat, lng]).addTo(map.value)
   if (type === 'user') {
     if (userMarker) userMarker.remove()
     userMarker = m
@@ -87,7 +86,7 @@ async function geocode(q) {
     'https://nominatim.openstreetmap.org/search?' +
     new URLSearchParams({ format: 'json', q })
   const res = await fetch(url, {
-    headers: { 'Accept-Language': 'en' } // 可选：稳定英文结果
+    headers: { 'Accept-Language': 'en' } // 稳定英文结果
   })
   const data = await res.json()
   return data?.[0] // 取第一个结果
@@ -125,7 +124,7 @@ async function searchPlace() {
     setMarker(lat, lon, 'dest')
     map.value.setView([lat, lon], 14)
 
-    // 试图从用户位置规划路线（允许失败）
+    // 从用户位置规划路线（允许失败）
     await new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
@@ -152,7 +151,7 @@ async function searchPlace() {
           }
           resolve()
         },
-        () => resolve(), // 拒绝定位也继续（只标注目的地）
+        () => resolve(), // 拒绝定位也继续（仅标注目的地）
         { enableHighAccuracy: true, timeout: 8000 }
       )
     })
@@ -172,8 +171,6 @@ onMounted(() => {
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map.value)
-
-  // 缩放控件默认就在左上，不需要额外添加
 
   // 初次尝试定位用户位置
   navigator.geolocation.getCurrentPosition(
@@ -200,8 +197,15 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.map-page { position: relative; min-height: calc(100vh - 64px); }
+.map-page {
+  position: relative;
+  min-height: calc(100vh - 64px);
+}
+
+/* 地图容器在下层 */
 .map-container {
+  position: relative;   /* 提供定位上下文 */
+  z-index: 1;
   width: 100%;
   height: calc(100vh - 64px);
   min-height: 520px;
@@ -209,34 +213,79 @@ onBeforeUnmount(() => {
   border-radius: 14px;
   overflow: hidden;
 }
+
+/* Leaflet 容器层级（确保不盖住面板） */
+.leaflet-container { z-index: 1; }
+
+/* 顶部功能面板永远覆盖在地图之上 */
 .panel {
-  position: absolute; top: 16px; left: 16px;
-  background: #fff; padding: 14px; border-radius: 12px;
-  width: 360px; max-width: min(92vw, 420px);
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 10000;       /* 关键：高于地图 */
+  pointer-events: auto; /* 面板可点击/输入 */
+  background: #fff;
+  padding: 14px;
+  border-radius: 12px;
+  width: 360px;
+  max-width: min(92vw, 420px);
   box-shadow: 0 8px 24px rgba(0,0,0,.12);
 }
+
 .input-row { display: flex; gap: 8px; }
 .input-row input {
-  flex: 1; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px;
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
 }
 .input-row input:focus { border-color: #0d6efd; outline: none; }
 .input-row button {
-  padding: 10px 14px; border: none; border-radius: 10px; background:#0d6efd; color:#fff;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 10px;
+  background:#0d6efd;
+  color:#fff;
+  cursor: pointer;
 }
-.trip { margin-top: 10px; background:#f6f9ff; padding:10px 12px; border-radius:10px; font-size: 14px; }
+
+.trip {
+  margin-top: 10px;
+  background:#f6f9ff;
+  padding:10px 12px;
+  border-radius:10px;
+  font-size: 14px;
+}
 .hint { font-size: 12px; color:#666; margin-top:8px; }
+
 .loading {
-  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 10px; color: #444;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #444;
 }
 .spinner {
-  width: 28px; height: 28px; border-radius: 50%; border: 3px solid #ddd; border-top-color: #0d6efd;
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 3px solid #ddd; border-top-color: #0d6efd;
   animation: spin 1s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
 .alert {
-  margin-top: 10px; background: #fff5f5; border: 1px solid #ffd6d6; color: #b42318;
-  padding: 8px 10px; border-radius: 8px; font-size: 13px;
+  margin-top: 10px;
+  background: #fff5f5;
+  border: 1px solid #ffd6d6;
+  color: #b42318;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
 }
-@media (max-width: 600px) { .panel { left: 8px; right: 8px; width: auto; } }
+
+@media (max-width: 600px) {
+  .panel { left: 8px; right: 8px; width: auto; z-index: 10000; }
+}
 </style>
