@@ -13,7 +13,7 @@ import Feedback from '@/views/Feedback.vue'
 import HealthResources from '@/views/HealthResources.vue'
 import NotFound from '@/views/NotFound.vue'
 import ArticleDetail from '@/views/ArticleDetail.vue'  // 导入文章详情页面
-
+import Map from '@/views/Map.vue'
 const routes = [
   { path: '/', name: 'Home', component: Home },
   { path: '/login', name: 'Login', component: Login },
@@ -82,7 +82,7 @@ const routes = [
   { path: '/resources', name: 'Resources', component: HealthResources },
 
 
-
+ { path: '/map', name: 'Map', component: Map },   // ← 新增
  
 
   // 404 页面兜底
