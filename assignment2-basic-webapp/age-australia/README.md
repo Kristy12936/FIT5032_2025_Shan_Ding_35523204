@@ -1,4 +1,4 @@
-🇦🇺 AgeAustralia — A Health Support Platform for Older Adults
+🇦🇺 AgeAustralia  A Health Support Platform for Older Adults
 
 AgeAustralia is a Vue 3 frontend-only health platform designed to support older adults with informative articles, community events, wellness resources, and feedback tools. The project emphasizes usability, visual aesthetics, and local-first architecture — all data is managed using localStorage and static JSON files, with no backend or cloud database required.
 

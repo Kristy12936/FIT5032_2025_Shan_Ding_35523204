@@ -29,6 +29,14 @@
           >
             <i class="pi pi-book me-2"></i> View Articles Table
           </router-link>
+
+          <!-- ✅ 新增：发送邮件按钮 -->
+          <router-link
+            to="/email"
+            class="btn btn-outline-success"
+          >
+            <i class="pi pi-envelope me-2"></i> Send Email
+          </router-link>
         </div>
       </div>
 
@@ -75,12 +83,16 @@
       </div>
 
       <!-- 调试信息：显示已保存文章的数量 -->
-      <p>Debug: Saved articles count: {{ savedArticles.length }}</p> <!-- Debugging line -->
+      <p>Debug: Saved articles count: {{ savedArticles.length }}</p>
 
       <!-- 导出按钮 -->
-      <div class="text-center mt-4">
-        <button @click="exportSavedArticlesAsCSV" class="btn btn-primary me-3" v-if="savedArticles.length > 0">Export Saved Articles as CSV</button>
-        <button @click="exportSavedArticlesAsPDF" class="btn btn-secondary" v-if="savedArticles.length > 0">Export Saved Articles as PDF</button>
+      <div class="text-center mt-4" v-if="savedArticles.length > 0">
+        <button @click="exportSavedArticlesAsCSV" class="btn btn-primary me-3">
+          Export Saved Articles as CSV
+        </button>
+        <button @click="exportSavedArticlesAsPDF" class="btn btn-secondary">
+          Export Saved Articles as PDF
+        </button>
       </div>
     </div>
   </div>
@@ -121,7 +133,7 @@ onMounted(async () => {
   savedArticles.value = allArticles.filter(a => userLocal.favorites?.includes(a.id))
 
   // 输出调试信息
-  console.log(savedArticles.value)  // 确保数据加载正常
+  console.log(savedArticles.value)
 })
 
 // 获取活动的平均评分

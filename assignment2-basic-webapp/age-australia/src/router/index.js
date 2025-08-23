@@ -47,6 +47,14 @@ const routes = [
     component: Dashboard,
     meta: { requiresAuth: true }
   },
+
+   {
+  path: '/email',
+  name: 'EmailForm',
+  component: () => import('@/views/EmailForm.vue'),
+  meta: { requiresAuth: true }   // 需要登录才能访问
+  },
+
   {
     path: '/admin',
     name: 'AdminPanel',
@@ -73,9 +81,16 @@ const routes = [
   { path: '/feedback', name: 'Feedback', component: Feedback },
   { path: '/resources', name: 'Resources', component: HealthResources },
 
+
+
+ 
+
   // 404 页面兜底
   { path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound }
 ]
+
+
+
 
 const router = createRouter({
   history: createWebHistory(),
