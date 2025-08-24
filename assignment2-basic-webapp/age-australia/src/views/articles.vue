@@ -23,17 +23,20 @@
                 {{ article.title }}
               </h5>
               <p class="card-text text-secondary flex-grow-1">
-                {{ article.content }}
+                {{ article.content.slice(0, 120) }}...
               </p>
-              <button
-                class="btn btn-outline-warning mt-auto"
-                @click="toggleFavorite(article)"
-              >
-                <i
-                  :class="isFavorited(article.id) ? 'fas fa-star' : 'far fa-star'"
-                ></i>
-                {{ isFavorited(article.id) ? 'Saved' : 'Save' }}
-              </button>
+              <div class="d-flex justify-content-between align-items-center mt-auto">
+                <span class="badge bg-info">{{ article.category }}</span>
+                <button
+                  class="btn btn-outline-warning"
+                  @click="toggleFavorite(article)"
+                >
+                  <i
+                    :class="isFavorited(article.id) ? 'fas fa-star' : 'far fa-star'"
+                  ></i>
+                  {{ isFavorited(article.id) ? 'Saved' : 'Save' }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -48,15 +51,14 @@
 
 <script setup>
 import { ref, onMounted, watchEffect } from 'vue'
+import articlesData from '@/assets/data/articles.json'
 
 const articles = ref([])
 const user = ref(JSON.parse(localStorage.getItem('user') || '{}'))
 
-onMounted(async () => {
-  const res = await fetch('/articles.json')
-  if (res.ok) {
-    articles.value = await res.json()
-  }
+onMounted(() => {
+  // 直接使用导入的JSON数据
+  articles.value = Array.isArray(articlesData) ? articlesData : []
 })
 
 watchEffect(() => {
