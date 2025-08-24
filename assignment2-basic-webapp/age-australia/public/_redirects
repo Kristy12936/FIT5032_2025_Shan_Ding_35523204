@@ -1,1 +1,15 @@
-/*    /index.html   200
+/               /index.html   200
+/login          /index.html   200
+/register       /index.html   200
+/dashboard      /index.html   200
+/articles       /index.html   200
+/articles/:id   /index.html   200
+/events         /index.html   200
+/event/:id      /index.html   200
+/email          /index.html   200
+/admin          /index.html   200
+/events-table   /index.html   200
+/articles-table /index.html   200
+/feedback       /index.html   200
+/resources      /index.html   200
+/map            /index.html   200

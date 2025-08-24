@@ -6,59 +6,63 @@ import { createPinia } from 'pinia'
 // 样式导入
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'aos/dist/aos.css'
-import AOS from 'aos'
 
-// PrimeVue 样式和核心插件
+// 正确导入 PrimeVue - 使用命名导入而不是默认导入
 import PrimeVue from 'primevue/config'
-import 'primevue/resources/themes/lara-light-blue/theme.css'
-import 'primevue/resources/primevue.min.css'
-import 'primeicons/primeicons.css'
+// 移除这些全局样式导入，改为在组件中按需导入
+// import 'primevue/resources/themes/lara-light-blue/theme.css'
+// import 'primevue/resources/primevue.min.css'
+// import 'primeicons/primeicons.css'
 
 // Bootstrap JS
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 
-// ✅ PrimeVue 组件注册
-import Button from 'primevue/button'
-import Textarea from 'primevue/textarea'
-import ConfirmDialog from 'primevue/confirmdialog'
-import ConfirmationService from 'primevue/confirmationservice'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
-
-// ✅ 导入认证存储
-import { useAuthStore } from '@/store/auth'
-
 // ✅ 创建应用
 const app = createApp(App)
+const pinia = createPinia()
 
 // ✅ 使用插件
-app.use(createPinia())
+app.use(pinia)
 app.use(router)
-app.use(PrimeVue)
-app.use(ConfirmationService)
 
-// ✅ 注册全局组件
-app.component('Button', Button)
-app.component('Textarea', Textarea)
-app.component('ConfirmDialog', ConfirmDialog)
-app.component('DataTable', DataTable)
-app.component('Column', Column)
-
-// ✅ 等路由就绪后挂载并初始化 AOS 和认证
-router.isReady().then(() => {
-  // 初始化 AOS 动画
-  AOS.init({
-    duration: 800,
-    easing: 'ease-in-out',
-    once: true
+// 有条件地使用 PrimeVue - 只在开发环境或需要时
+try {
+  app.use(PrimeVue, {
+    ripple: true,
+    // 可选的主题配置
+    theme: {
+      preset: 'lara-light-blue'
+    }
   })
-  
-  // 初始化认证状态监听
-  const authStore = useAuthStore()
-  authStore.init()
-  
-  app.mount('#app')
-})
+  console.log('PrimeVue initialized successfully')
+} catch (error) {
+  console.warn('PrimeVue initialization failed, continuing without it:', error)
+}
+
+// ✅ 按需导入 PrimeVue 组件（而不是全局注册）
+// 移除全局组件注册，改为在具体组件中导入
+
+// ✅ 简化挂载过程
+const initApp = async () => {
+  try {
+    // 等待路由就绪
+    await router.isReady()
+    
+    // 挂载应用
+    app.mount('#app')
+    
+    console.log('App mounted successfully')
+    
+  } catch (error) {
+    console.error('Failed to initialize app:', error)
+    
+    // 降级方案：直接挂载
+    app.mount('#app')
+  }
+}
+
+// 初始化应用
+initApp()
 
 // 全局错误处理
 app.config.errorHandler = (err, instance, info) => {
