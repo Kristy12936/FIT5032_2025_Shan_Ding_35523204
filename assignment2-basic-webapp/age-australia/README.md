@@ -8,6 +8,8 @@ It integrates **local JSON files, localStorage, and Firebase Firestore** for dat
 
 ## 💻 Tech Stack
 
+
+
 - ✅ **Vue 3 + Composition API** (frontend framework) 
 - ✅ **Bootstrap 5** (responsive UI components)  
 - ✅ **PrimeVue** (interactive DataTables, dialogs, buttons)  
