@@ -1,15 +1,27 @@
 <template>
   <div class="event-list-wrapper py-5">
     <div class="container" data-aos="fade-up">
-      <h2 class="text-center text-primary mb-5">
-        <i class="fas fa-calendar-alt me-2"></i>Upcoming Events
+      <h2 class="text-center text-primary mb-4">
+        <i class="fas fa-calendar-alt me-2"></i>All Events
       </h2>
+
+      <!-- 🔎 搜索框 -->
+      <div class="d-flex align-items-center mb-4">
+        <i class="fas fa-search me-2" aria-hidden="true"></i>
+        <input
+          v-model.trim="q"
+          type="search"
+          class="form-control"
+          placeholder="Search by title / description / date"
+          aria-label="Search events"
+        />
+      </div>
 
       <!-- 活动卡片 -->
       <div class="row">
         <div
           class="col-md-6 col-lg-4 mb-4"
-          v-for="event in sortedEvents"
+          v-for="event in visibleEvents"
           :key="event.id"
         >
           <div class="card event-card h-100 shadow-sm" data-aos="zoom-in">
@@ -36,43 +48,65 @@
       </div>
 
       <!-- 没有活动时 -->
-      <p v-if="sortedEvents.length === 0" class="text-center text-muted mt-4">
-        No upcoming events.
+      <p v-if="visibleEvents.length === 0" class="text-center text-muted mt-4">
+        No events found.
       </p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, onBeforeUnmount } from 'vue'
 import { collection, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
 
 const events = ref([])
+const q = ref('') // 🔎 搜索关键字
+let unlisten = null
 
 onMounted(() => {
   const eventsRef = collection(db, 'events')
-  onSnapshot(eventsRef, (snapshot) => {
-    events.value = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }))
+  unlisten = onSnapshot(eventsRef, (snapshot) => {
+    events.value = snapshot.docs.map(doc => {
+      const d = doc.data() || {}
+      return {
+        id: doc.id,
+        title: d.title || '',
+        description: d.description || '',
+        date: d.date || '' // 预期 'YYYY-MM-DD'
+      }
+    })
   })
 })
+onBeforeUnmount(() => { if (typeof unlisten === 'function') unlisten() })
 
-// ✅ 时间格式优化
+// 时间格式
 const formatDate = (dateStr) => {
   const date = new Date(dateStr)
-  return date.toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
+  return isNaN(date) ? (dateStr || '') : date.toLocaleDateString(undefined, {
+    year: 'numeric', month: 'long', day: 'numeric'
   })
 }
 
-// ✅ 按时间排序
-const sortedEvents = computed(() => {
-  return events.value.slice().sort((a, b) => new Date(a.date) - new Date(b.date))
+// 先按关键字过滤（title/description/date，大小写不敏感）
+const filtered = computed(() => {
+  const kw = q.value.toLowerCase()
+  if (!kw) return events.value
+  return events.value.filter(ev =>
+    (ev.title && ev.title.toLowerCase().includes(kw)) ||
+    (ev.description && ev.description.toLowerCase().includes(kw)) ||
+    (ev.date && ev.date.toLowerCase().includes(kw))
+  )
+})
+
+// 再按日期升序排序
+const visibleEvents = computed(() => {
+  const arr = [...filtered.value]
+  return arr.sort((a, b) => {
+    const ta = Date.parse(a.date) || 0
+    const tb = Date.parse(b.date) || 0
+    return ta - tb
+  })
 })
 </script>
 
@@ -81,23 +115,8 @@ const sortedEvents = computed(() => {
   background: linear-gradient(to right, #f8fbff, #f1f8ff);
   min-height: 100vh;
 }
-
-/* 卡片美化 */
-.event-card {
-  border-radius: 14px;
-  background: linear-gradient(145deg, #ffffff, #f2f8ff);
-  transition: all 0.3s ease;
-}
-.event-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 123, 255, 0.15);
-}
-
-.card-title {
-  font-weight: 600;
-}
-
-.text-muted {
-  font-size: 0.9rem;
-}
+.event-card { border-radius: 14px; background: linear-gradient(145deg, #ffffff, #f2f8ff); transition: all 0.3s ease; }
+.event-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0, 123, 255, 0.15); }
+.card-title { font-weight: 600; }
+.text-muted { font-size: 0.9rem; }
 </style>
