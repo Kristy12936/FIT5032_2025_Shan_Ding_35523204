@@ -7,9 +7,6 @@ It integrates **local JSON files, localStorage, and Firebase Firestore** for dat
 ---
 
 ## 💻 Tech Stack
-
-
-
 - ✅ **Vue 3 + Composition API** (frontend framework) 
 - ✅ **Bootstrap 5** (responsive UI components)  
 - ✅ **PrimeVue** (interactive DataTables, dialogs, buttons)  
@@ -18,12 +15,11 @@ It integrates **local JSON files, localStorage, and Firebase Firestore** for dat
 - ✅ **JSON + LocalStorage** (local data storage)  
 - ✅ **Firebase Firestore** (real-time event & article storage)  
 - ✅ **Cloudflare Pages** (frontend deployment + serverless functions)  
-- ✅ **Resend API** (cloud email service for sending messages with attachments)  
+- ✅ **Resend API** (cloud email service for sending messages)  
 
 ---
 
 ## 📚 Features
-
 | Module             | Description                                                  |
 | ------------------ | ------------------------------------------------------------ |
 | ✅ User Auth        | Register/Login with email & password validation              |
@@ -36,7 +32,7 @@ It integrates **local JSON files, localStorage, and Firebase Firestore** for dat
 | ✅ Feedback Module  | Users can submit suggestions (stored in Firestore/localStorage) |
 | ✅ Health Resources | Nutrition tips, hotlines, support services — filterable      |
 | ✅ Map & Navigation | Leaflet + OSM integration for searching locations and navigation |
-| ✅ Email Sending    | Send emails (via Resend API) with recipient, subject, body, and attachments |
+| ✅ Email Sending    | Send emails (via Resend API) with recipient, subject, body   |
 | ✅ Data Export      | Export articles/events to CSV for offline storage            |
 | ✅ Accessibility    | Alt text for images, ARIA labels for inputs & buttons        |
 | ✅ Responsive UI    | Mobile and desktop friendly                                  |
@@ -45,22 +41,20 @@ It integrates **local JSON files, localStorage, and Firebase Firestore** for dat
 ---
 
 ## 📁 Project Structure
-
 ```
 AgeAustralia/
 ├── src/
-│   ├── assets/
-│   │   └── data/              # JSON files (articles, events, resources)
-│   ├── components/            # Reusable Vue components
-│   ├── views/                 # Main pages (Home, Articles, Events, Dashboard, Admin, etc.)
-│   ├── router/                # Vue Router setup
-│   ├── store/                 # Pinia (auth & state management)
-│   ├── App.vue                # Root app
-│   └── main.js                # Entry point
-├── functions/                 # Cloudflare Pages Functions (e.g., send-email.js)
-├── public/                    # Static assets
-├── index.html                 # HTML template
-└── vite.config.js             # Vite config
+│   ├── assets/data/         # JSON files (articles, events, resources)
+│   ├── components/          # Reusable Vue components
+│   ├── views/               # Main pages (Home, Articles, Events, Dashboard, Admin, etc.)
+│   ├── router/              # Vue Router setup
+│   ├── store/               # Pinia (auth & state management)
+│   ├── App.vue              # Root app
+│   └── main.js              # Entry point
+├── functions/               # Cloudflare Pages Functions (e.g., send-email.js)
+├── public/                  # Static assets
+├── index.html               # HTML template
+└── vite.config.js           # Vite config
 ```
 
 ---
@@ -68,64 +62,76 @@ AgeAustralia/
 ## 🚀 Getting Started
 
 ### 1. Clone the Repository
-
 ```bash
 git clone https://github.com/Kristy12936/FIT5032_2025_Shan_Ding_35523204.git
 cd age-australia
 ```
 
 ### 2. Install Dependencies
-
 ```bash
 npm install
 ```
 
 ### 3. Run Development Server
-
 ```bash
 npm run dev
 ```
+Then open [http://localhost:5173](http://localhost:5173) in your browser.
 
-Open https://fit5032-2025-shan-ding-35523204.pages.dev/ in your browser.
+---
+
+## 🛠️ Environment Setup
+
+Create a `.env` file in the root directory (based on `.env.example`):
+
+```env
+VITE_FIREBASE_API_KEY=your_key
+VITE_FIREBASE_AUTH_DOMAIN=your_app.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=xxxxxx
+VITE_FIREBASE_APP_ID=xxxxxx
+
+RESEND_API_KEY=your_resend_api_key
+EMAIL_FROM="AgeAustralia <no-reply@yourdomain>"
+EMAIL_TO=receiver@example.com
+```
 
 ---
 
 ## 🛠️ Usage Notes
-
 - 👤 Default admin account:  
   **Email:** `admin@age.com`  
   **Password:** `Ds20021206`
 
-- 🧠 User data such as saved articles, feedback, event registration, and ratings are stored in **localStorage**.  
-
-- 📂 All static content (articles, events, resources) is sourced from JSON files in `src/assets/data/`.  
-
-- ☁️ Dynamic event & article data is synced with **Firebase Firestore** for real-time updates.  
-
-- 📧 Email sending is powered by **Resend API**, configured via Cloudflare Pages Functions + environment variables (`RESEND_API_KEY`, `FROM_EMAIL`).  
-
-- ✅ Bootstrap JS is optional (for dropdown support in navigation).  
+- 🧠 User data (bookmarks, feedback, ratings) stored in **localStorage**.  
+- 📂 Static content sourced from `src/assets/data/`.  
+- ☁️ Dynamic event & article data synced with **Firebase Firestore**.  
+- 📧 Email sending via **Resend API** through Cloudflare Pages Functions.  
 
 ---
 
 ## 🌟 Innovative Features
-
 - **Real-time Admin Event Management** (Firestore live sync)  
-- **Interactive Map & Navigation** (Leaflet + OSM + OSRM routing)  
-- **Cloud Email Integration** (Resend API with attachment support)  
-- **CSV Export** (downloadable article and event data)  
+- **Interactive Map & Navigation** (Leaflet + OSM)  
+- **Cloud Email Integration** (Resend API with attachments)  
+- **CSV Export** (downloadable article/event data)  
 - **Accessibility-first Design** (ARIA support + alt text)  
 
 ---
 
 ## 🌍 Deployment
 
-- **Frontend**: Deployed on **Cloudflare Pages**  
-- **API Functions**: Implemented via **Cloudflare Pages Functions** (`/api/send-email`)  
-- **Email Service**: Integrated with **Resend API** (free tier, attachment support)  
+### Cloudflare Pages
+- **Frontend**: deployed from GitHub `main` branch  
+- **Serverless Functions**: `/functions/send-email.js`  
+- **Environment Variables** set in Pages dashboard (`RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_TO`, Firebase config)  
 
-🔗 Live site: [https://fit5032-2025-shan-ding-35523204.pages.dev](https://fit5032-2025-shan-ding-35523204.pages.dev)
+### Resend API
+- Used for sending emails from contact form via Cloudflare Functions.  
+
+🔗 **Live site:** [https://fit5032-2025-shan-ding-35523204.pages.dev](https://fit5032-2025-shan-ding-35523204.pages.dev)
 
 ---
 
-✅ *This project demonstrates full-stack integration using modern frontend frameworks, cloud deployment, and serverless architecture tailored to a health support platform for older adults.*  
+✅ *This project demonstrates full-stack integration using modern frontend frameworks, cloud deployment, and serverless architecture tailored to a health support platform for older adults.*
