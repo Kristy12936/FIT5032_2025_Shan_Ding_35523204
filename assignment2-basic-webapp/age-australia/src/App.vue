@@ -90,7 +90,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useConfirm } from 'primevue/useconfirm'
-import { useAuthStore } from '@/store/auth'
+import { useAuthStore } from './store/auth'
 
 const router = useRouter()
 const confirm = useConfirm()

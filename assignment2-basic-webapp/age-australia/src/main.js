@@ -1,3 +1,4 @@
+// src/main.js
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
@@ -25,15 +26,12 @@ import ConfirmationService from 'primevue/confirmationservice'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 
-// ✅ 导入认证存储
-import { useAuthStore } from '@/store/auth'
-
 // ✅ 创建应用
 const app = createApp(App)
 
 // ✅ 使用插件
-app.use(createPinia())
 app.use(router)
+app.use(createPinia())
 app.use(PrimeVue)
 app.use(ConfirmationService)
 
@@ -44,25 +42,8 @@ app.component('ConfirmDialog', ConfirmDialog)
 app.component('DataTable', DataTable)
 app.component('Column', Column)
 
-// ✅ 等路由就绪后挂载并初始化 AOS 和认证
+// ✅ 等路由就绪后挂载并初始化 AOS
 router.isReady().then(() => {
-  // 初始化 AOS 动画
-  AOS.init({
-    duration: 800,
-    easing: 'ease-in-out',
-    once: true
-  })
-  
-  // 初始化认证状态监听
-  const authStore = useAuthStore()
-  authStore.init()
-  
+  AOS.init()
   app.mount('#app')
 })
-
-// 全局错误处理
-app.config.errorHandler = (err, instance, info) => {
-  console.error('Vue error:', err)
-  console.log('Vue instance:', instance)
-  console.log('Error info:', info)
-}
